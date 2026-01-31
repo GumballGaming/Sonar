@@ -3,7 +3,7 @@ import type { Config } from "../utils/config";
 
 export const SYSTEM_PROMPT = `You are Cody, a friendly and expert coding assistant.
 
-## Your> Personality:
+## Your Personality:
 - You're helpful, conversational, and knowledgeable
 - You chat naturally when users want to talk
 - You switch to coding mode when users need code
@@ -54,6 +54,7 @@ You're a developer's companion - chat when they want to chat, code when they nee
 export class CodingAgent {
   private client: APIClient;
   private conversationHistory: Message[];
+  private pendingUserMessage: Message | null = null;
 
   constructor(config: Config) {
     this.client = new APIClient(config);
@@ -61,38 +62,54 @@ export class CodingAgent {
   }
 
   async send(userMessage: string): Promise<string> {
-    this.conversationHistory.push({
-      role: "user",
-      content: userMessage,
-    });
+    const userMsg: Message = { role: "user", content: userMessage };
+    this.conversationHistory.push(userMsg);
 
-    const response = await this.client.chat(this.conversationHistory);
-
-    this.conversationHistory.push({
-      role: "assistant",
-      content: response,
-    });
-
-    return response;
+    try {
+      const response = await this.client.chat(this.conversationHistory);
+      this.conversationHistory.push({
+        role: "assistant",
+        content: response,
+      });
+      return response;
+    } catch (error) {
+      this.conversationHistory.pop();
+      throw error;
+    }
   }
 
   async *sendStream(userMessage: string): AsyncGenerator<string> {
-    this.conversationHistory.push({
-      role: "user",
-      content: userMessage,
-    });
+    const userMsg: Message = { role: "user", content: userMessage };
+    this.pendingUserMessage = userMsg;
+    this.conversationHistory.push(userMsg);
 
     let fullResponse = "";
+    let success = false;
 
-    for await (const chunk of this.client.chatStream(this.conversationHistory)) {
-      fullResponse += chunk;
-      yield chunk;
+    try {
+      for await (const chunk of this.client.chatStream(this.conversationHistory)) {
+        fullResponse += chunk;
+        yield chunk;
+      }
+      success = true;
+    } finally {
+      if (success && fullResponse) {
+        this.conversationHistory.push({
+          role: "assistant",
+          content: fullResponse,
+        });
+      } else if (!success) {
+        const idx = this.conversationHistory.indexOf(userMsg);
+        if (idx !== -1) {
+          this.conversationHistory.splice(idx, 1);
+        }
+      }
+      this.pendingUserMessage = null;
     }
+  }
 
-    this.conversationHistory.push({
-      role: "assistant",
-      content: fullResponse,
-    });
+  abort(): void {
+    this.client.abort();
   }
 
   getLastResponse(): string {
@@ -104,9 +121,20 @@ export class CodingAgent {
 
   clearHistory(): void {
     this.conversationHistory = [{ role: "system", content: SYSTEM_PROMPT }];
+    this.pendingUserMessage = null;
   }
 
   getHistory(): Message[] {
     return [...this.conversationHistory];
+  }
+
+  getMessageCount(): number {
+    return this.conversationHistory.filter((m) => m.role !== "system").length;
+  }
+
+  updateSystemPrompt(addition: string): void {
+    if (this.conversationHistory[0]?.role === "system") {
+      this.conversationHistory[0].content = SYSTEM_PROMPT + "\n\n" + addition;
+    }
   }
 }
