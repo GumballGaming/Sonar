@@ -17,7 +17,7 @@ To ensure quality and steady progress, I push updates on a flexible schedule bas
 **Do Bugs Appear**
 
 * **Like all bugs when updates come bugs will be fixed if you can tell me about bugs in the commments then that will be super helpfull so i can fix them**
-* 
+
 ## 📋 Prerequisites
 * **API Provider:** You must use your own AI provider/API key.
 * **Runtime:** You must have **Bun** installed on your machine.
