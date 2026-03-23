@@ -283,7 +283,7 @@ class UI {
     console.log();
     console.log(`  ${theme.bold}${filename}${theme.reset}`);
 
-    if (!oldContent) {
+    if (oldContent === null) {
       console.log(`  ${theme.green}+ New file${theme.reset}`);
       UI.codeBlock(newContent.slice(0, 500), undefined, filename);
       return;
@@ -785,15 +785,27 @@ class CodeExtractor {
     if (!this.inBlock) {
       const match = this.buffer.match(/```(\w+):([^\n]+)\n/);
       if (match) {
-        this.inBlock = true;
-        // Fix path case sensitivity
         const rawFilename = match[2].trim();
-        this.filename = fixPathCase(rawFilename);
-        this.code = "";
-        this.buffer = this.buffer.slice(
-          this.buffer.indexOf(match[0]) + match[0].length
-        );
-        UI.toolCall("write_file", this.filename);
+        // Only treat as a file block if the name looks like a valid file path:
+        // it must contain a dot (file extension) or a directory separator.
+        // This prevents plain markdown blocks like ```bash:run echo "hello"
+        // from being swallowed by the file extraction logic.
+        const looksLikeFilePath =
+          rawFilename.includes(".") ||
+          rawFilename.includes("/") ||
+          rawFilename.includes("\\");
+        if (looksLikeFilePath) {
+          this.inBlock = true;
+          // Fix path case sensitivity
+          this.filename = fixPathCase(rawFilename);
+          this.code = "";
+          this.buffer = this.buffer.slice(
+            this.buffer.indexOf(match[0]) + match[0].length
+          );
+          UI.toolCall("write_file", this.filename);
+        } else if (this.buffer.length > 200) {
+          this.buffer = this.buffer.slice(-200);
+        }
       } else if (this.buffer.length > 200) {
         this.buffer = this.buffer.slice(-200);
       }
@@ -1093,6 +1105,10 @@ async function handleCommand(
         UI.error("Path not found");
         break;
       }
+      if (!fs.statSync(p).isDirectory()) {
+        UI.error(`Not a directory: ${arg(0)}`);
+        break;
+      }
       console.log();
       printFullStructure(p);
       console.log();
@@ -1103,6 +1119,10 @@ async function handleCommand(
       const p = arg(0) ? resolvePath(arg(0)) : currentDir;
       if (!fs.existsSync(p)) {
         UI.error("Path not found");
+        break;
+      }
+      if (!fs.statSync(p).isDirectory()) {
+        UI.error(`Not a directory: ${arg(0)}`);
         break;
       }
       console.log();
@@ -1367,6 +1387,22 @@ function createInterface(): readline.Interface {
 }
 
 async function main(): Promise<void> {
+  // Restore terminal state on unhandled promise rejections so the cursor and
+  // raw mode are always cleaned up even if something unexpected throws.
+  process.on("unhandledRejection", (reason) => {
+    process.stdout.write("\x1b[?25h"); // restore cursor visibility
+    process.stdout.write("\x1b[0m");   // reset colour/style
+    try {
+      if (process.stdin.isTTY && (process.stdin as NodeJS.ReadStream).isRaw) {
+        process.stdin.setRawMode(false);
+      }
+    } catch {}
+    UI.error(
+      `Unhandled error: ${reason instanceof Error ? reason.message : reason}`
+    );
+    process.exit(1);
+  });
+
   const baseConfig = loadConfig();
   const savedConfig = loadSavedConfig();
 
