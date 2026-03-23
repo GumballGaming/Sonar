@@ -7,7 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 
-const VERSION = "1.1.1";
+const VERSION = "1.7";
 
 const theme = {
   reset: "\x1b[0m",
