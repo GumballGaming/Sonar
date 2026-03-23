@@ -48,8 +48,8 @@ export class APIClient {
     }
 
     if (this.config.apiUrl?.includes("openrouter")) {
-      headers["HTTP-Referer"] = "https://github.com/cody-cli";
-      headers["X-Title"] = "Cody CLI";
+      headers["HTTP-Referer"] = "https://github.com/sonar-cli";
+      headers["X-Title"] = "Sonar CLI";
     }
 
     return headers;

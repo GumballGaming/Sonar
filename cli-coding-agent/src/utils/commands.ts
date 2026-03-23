@@ -209,7 +209,7 @@ export const commandRegistry: CommandInfo[] = [
   {
     name: "/quit",
     aliases: ["/q", "/e", "/exit"],
-    description: "Exit Cody",
+    description: "Exit Sonar",
     usage: "/quit",
     category: "other",
   },

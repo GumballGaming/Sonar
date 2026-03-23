@@ -18,10 +18,10 @@ const DEFAULT_CONFIG: Config = {
 
 export function loadConfig(): Config {
   const envConfig: Partial<Config> = {
-    apiUrl: process.env.CODY_API_URL || process.env.OPENAI_API_BASE,
-    apiKey: process.env.CODY_API_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY,
-    model: process.env.CODY_MODEL,
-    timeout: process.env.CODY_TIMEOUT ? parseInt(process.env.CODY_TIMEOUT, 10) : undefined,
+    apiUrl: process.env.SONAR_API_URL || process.env.OPENAI_API_BASE,
+    apiKey: process.env.SONAR_API_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY,
+    model: process.env.SONAR_MODEL,
+    timeout: process.env.SONAR_TIMEOUT ? parseInt(process.env.SONAR_TIMEOUT, 10) : undefined,
   };
 
   const filtered = Object.fromEntries(

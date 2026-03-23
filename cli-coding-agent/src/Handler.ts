@@ -7,7 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 
-const VERSION = "1.1.1";
+const VERSION = "1.7";
 
 const theme = {
   reset: "\x1b[0m",
@@ -42,7 +42,7 @@ const theme = {
 };
 
 const icons = {
-  cody: "◆",
+  sonar: "◆",
   user: "❯",
   success: "✓",
   error: "✗",
@@ -59,7 +59,7 @@ const icons = {
   spinner: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
 };
 
-const CONFIG_DIR = path.join(os.homedir(), ".cody");
+const CONFIG_DIR = path.join(os.homedir(), ".sonar");
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 const HISTORY_FILE = path.join(CONFIG_DIR, "history.json");
 const MODELS_CACHE_FILE = path.join(CONFIG_DIR, "models.json");
@@ -190,7 +190,7 @@ class UI {
 
     console.log();
     console.log(
-      `  ${theme.cyan}${theme.bold}${icons.cody} CODY${theme.reset} ${theme.dim}v${VERSION}${theme.reset}`
+      `  ${theme.cyan}${theme.bold}${icons.sonar} SONAR${theme.reset} ${theme.dim}v${VERSION}${theme.reset}`
     );
     console.log(`  ${theme.dim}${line}${theme.reset}`);
     console.log(
@@ -382,6 +382,7 @@ function saveCachedModels(models: string[]): void {
 }
 
 function saveSession(): void {
+  if (!config) return;
   try {
     ensureConfigDir();
     const session = {
@@ -390,7 +391,7 @@ function saveSession(): void {
       timestamp: Date.now(),
     };
     fs.writeFileSync(HISTORY_FILE, JSON.stringify(session, null, 2));
-  } catch {}
+  } catch (_err) {}
 }
 
 async function fetchModels(): Promise<string[]> {
@@ -931,7 +932,7 @@ User request: ${message}`;
   }
 
   console.log();
-  process.stdout.write(`  ${theme.magenta}${icons.cody}${theme.reset} `);
+  process.stdout.write(`  ${theme.magenta}${icons.sonar}${theme.reset} `);
 
   const extractor = new CodeExtractor(currentDir);
 
@@ -1159,7 +1160,7 @@ async function handleCommand(
       try {
         const content = fs.readFileSync(p, "utf-8");
         console.log();
-        process.stdout.write(`  ${theme.magenta}${icons.cody}${theme.reset} `);
+        process.stdout.write(`  ${theme.magenta}${icons.sonar}${theme.reset} `);
         for await (const chunk of agent.sendStream(
           `Here's ${arg(0)}:\n\`\`\`\n${content}\n\`\`\`\n\nWhat would you like me to do?`
         )) {

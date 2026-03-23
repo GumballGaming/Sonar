@@ -1,7 +1,7 @@
 import { APIClient, type Message } from "./api";
 import type { Config } from "../utils/config";
 
-export const SYSTEM_PROMPT = `You are Cody, a friendly and expert coding assistant.
+export const SYSTEM_PROMPT = `You are Sonar, a friendly and expert coding assistant.
 
 ## How to Respond:
 
